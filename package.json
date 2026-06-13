@@ -1,0 +1,14 @@
+{
+  "name": "ando-secure-messenger",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ANDO encrypted disappearing-message test app.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
