@@ -1,0 +1,20 @@
+{
+  "name": "ando-secure-messenger",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ANDO encrypted disappearing-message test app with multi-auth login.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^9.2.2",
+    "googleapis": "^127.0.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

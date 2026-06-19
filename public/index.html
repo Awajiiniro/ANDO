@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ANDO Secure Messenger</title>
+    <link rel="icon" type="image/jpeg" href="/ando-logo.jpeg" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div id="privacy-shield" aria-live="polite">
+      <img class="shield-mark" src="/ando-logo.jpeg" alt="ANDO logo" />
+      <h1>Privacy shield is active</h1>
+      <p>ANDO hides the interface whenever the tab loses focus or capture-like keys are pressed.</p>
+    </div>
+
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="ANDO conversations">
+        <header class="brand-bar">
+          <img class="brand-lock" src="/ando-logo.jpeg" alt="ANDO logo" />
+          <div>
+            <div class="brand-name">ANDO</div>
+            <div class="brand-subtitle">Private test messenger</div>
+          </div>
+          <button id="logout-btn" class="icon-button" title="Log out" aria-label="Log out">⊗</button>
+        </header>
+
+        <section class="identity-panel">
+          <label for="display-name">Your test identity</label>
+          <div class="identity-row">
+            <input id="display-name" maxlength="60" autocomplete="off" />
+            <button id="save-identity" class="icon-button primary" title="Save identity" aria-label="Save identity">✓</button>
+          </div>
+          <div class="fingerprint" id="fingerprint">Generating secure keys...</div>
+        </section>
+
+        <section class="status-grid" aria-label="Security status">
+          <div>
+            <strong>Web E2EE</strong>
+            <span>ECDH + AES-GCM</span>
+          </div>
+          <div>
+            <strong>24h expiry</strong>
+            <span>Server cleanup</span>
+          </div>
+          <div>
+            <strong>Screen guard</strong>
+            <span>Best effort</span>
+          </div>
+        </section>
+
+        <div class="search-wrap">
+          <input id="search" type="search" placeholder="Search people" autocomplete="off" />
+        </div>
+
+        <nav id="people-list" class="people-list" aria-label="Registered ANDO users"></nav>
+      </aside>
+
+      <section class="chat-panel">
+        <header class="chat-header">
+          <button id="menu-toggle" class="icon-button" title="People" aria-label="People">☰</button>
+          <div id="chat-avatar" class="avatar app-avatar" aria-label="ANDO logo"></div>
+          <div class="chat-title-wrap">
+            <h1 id="chat-title">Choose a conversation</h1>
+            <p id="chat-subtitle">Messages are encrypted before they leave this browser.</p>
+          </div>
+          <button id="security-info" class="icon-button" title="Security details" aria-label="Security details">ⓘ</button>
+        </header>
+
+        <div id="notice" class="notice">
+          Browsers cannot truly prevent operating-system screenshots or screen recording. ANDO adds web-level deterrents and privacy shielding for testing, while native mobile/desktop apps can enforce stronger capture policies.
+        </div>
+
+        <div id="messages" class="messages" aria-live="polite"></div>
+
+        <form id="composer" class="composer">
+          <button type="button" id="clear-chat" class="tool-button" title="Clear local test messages" aria-label="Clear local test messages">⌫</button>
+          <textarea id="message-input" rows="1" placeholder="Encrypted message" disabled></textarea>
+          <button id="send-button" class="send-button" type="submit" disabled title="Send encrypted message" aria-label="Send encrypted message">➤</button>
+        </form>
+      </section>
+
+      <aside class="details-panel" aria-label="Security details">
+        <header>
+          <h2>Security</h2>
+          <button id="close-details" class="icon-button" title="Close" aria-label="Close">×</button>
+        </header>
+        <div class="detail-block">
+          <span class="detail-label">End-to-end encryption</span>
+          <p>Message text is encrypted in the browser with a key derived from your private key and the recipient's public key. The backend stores only ciphertext, IV, sender, recipient, and expiry metadata.</p>
+        </div>
+        <div class="detail-block">
+          <span class="detail-label">Disappearing messages</span>
+          <p>Every message receives an expiry timestamp exactly 24 hours after creation. The server prunes expired messages on requests and a scheduled cleanup.</p>
+        </div>
+        <div class="detail-block">
+          <span class="detail-label">Capture blocking</span>
+          <p>Web apps can deter capture, hide content on blur, block print/context menus, and react to known keys. They cannot guarantee screenshot or screen-recording prevention across all devices.</p>
+        </div>
+        <div class="detail-block mono" id="backend-proof">Waiting for backend audit...</div>
+      </aside>
+    </main>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
