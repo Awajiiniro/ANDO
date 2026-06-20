@@ -3,7 +3,11 @@ import { motion } from 'framer-motion';
 
 export default function Splash({ onComplete }) {
   useEffect(() => {
-    const timer = setTimeout(onComplete, 2500);
+    console.log('Splash mounted, starting timer');
+    const timer = setTimeout(() => {
+      console.log('Splash timeout reached, calling onComplete');
+      onComplete();
+    }, 2500);
     return () => clearTimeout(timer);
   }, [onComplete]);
 
