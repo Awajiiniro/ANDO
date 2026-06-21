@@ -6,14 +6,15 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node scripts/dev.mjs",
+    "dev:api": "node server.js"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^9.2.2",
+    "better-sqlite3": "^12.11.1",
     "googleapis": "^127.0.0",
     "jsonwebtoken": "^9.0.2"
   }

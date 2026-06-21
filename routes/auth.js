@@ -1,17 +1,18 @@
-import { google } from "googleapis";
-
-const oauth2Client = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/auth/google/callback"
-);
-
 function sendJson(res, status, body) {
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
     "cache-control": "no-store",
   });
   res.end(JSON.stringify(body));
+}
+
+async function createGoogleOAuthClient() {
+  const { google } = await import("googleapis");
+  return new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/auth/google/callback"
+  );
 }
 
 async function parseBody(req) {
@@ -138,6 +139,7 @@ export function createAuthRoutes(db, auth, authQueries) {
       }
 
       try {
+        const oauth2Client = await createGoogleOAuthClient();
         const ticket = await oauth2Client.verifyIdToken({
           idToken,
           audience: process.env.GOOGLE_CLIENT_ID,

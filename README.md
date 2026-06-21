@@ -4,7 +4,15 @@ ANDO is a local test messenger with browser-side end-to-end encryption, 24-hour 
 
 ## Run
 
-On this Windows workspace, use the built-in PowerShell backend:
+For the React UI with auth, run the full dev stack from the project root:
+
+```powershell
+npm.cmd run dev
+```
+
+This starts the API on `http://127.0.0.1:3000` and the Vite UI on `http://127.0.0.1:5173`. If you run only the UI dev server, login/register will fail with a Vite proxy `ECONNREFUSED` error because `/api/auth/*` has no backend to reach.
+
+On this Windows workspace, the older static test UI can also use the built-in PowerShell backend:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\server.ps1 -Port 3000
