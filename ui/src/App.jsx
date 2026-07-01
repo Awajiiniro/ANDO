@@ -4,7 +4,6 @@ import Splash from './screens/Splash';
 import Login from './screens/Login';
 import Register from './screens/Register';
 import AddFriendsChoice from './screens/AddFriendsChoice';
-import UsernameSearch from './screens/UsernameSearch';
 import './styles/globals.css';
 
 function AppContent() {
@@ -23,13 +22,6 @@ function AppContent() {
   const handleSwitchToLogin = () => setScreen('login');
   const handleLoginSuccess = () => setScreen('add-friends');
   const handleRegisterSuccess = () => setScreen('add-friends');
-  const handleAddFriendsContinue = (method) => {
-    if (method === 'username') {
-      setScreen('username-search');
-    } else {
-      setScreen('home');
-    }
-  };
 
   return (
     <>
@@ -48,12 +40,9 @@ function AppContent() {
       )}
       {screen === 'add-friends' && (
         <AddFriendsChoice
-          onContinue={handleAddFriendsContinue}
+          onComplete={() => setScreen('home')}
           onSkip={() => setScreen('home')}
         />
-      )}
-      {screen === 'username-search' && (
-        <UsernameSearch onBack={() => setScreen('add-friends')} />
       )}
       {screen === 'home' && (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-6">

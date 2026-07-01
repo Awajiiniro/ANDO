@@ -9,10 +9,6 @@ export function createAuthQueries(db) {
       return db.prepare("SELECT * FROM users WHERE email = ?").get(email);
     },
 
-    findUserByUsername: (username) => {
-      return db.prepare("SELECT * FROM users WHERE username = ?").get(username);
-    },
-
     findUserByPhone: (phone) => {
       return db.prepare("SELECT * FROM users WHERE phone = ?").get(phone);
     },
@@ -25,22 +21,18 @@ export function createAuthQueries(db) {
       return db.prepare("SELECT * FROM users WHERE oauth_provider = ? AND oauth_id = ?").get(oauthProvider, oauthId);
     },
 
-    searchUsersByUsername: (query) => {
-      return db.prepare("SELECT * FROM users WHERE username LIKE ? ORDER BY username ASC LIMIT 20").all(`${query}%`);
-    },
-
-    createUserWithEmailPassword: (email, password, fullName, username) => {
+    createUserWithEmailPassword: (email, password, fullName) => {
       const id = randomUUID();
       const passwordHash = bcrypt.hashSync(password, saltRounds);
       const now = Date.now();
 
       const stmt = db.prepare(`
-        INSERT INTO users (id, email, username, password_hash, full_name, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO users (id, email, password_hash, full_name, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?)
       `);
 
-      stmt.run(id, email, username, passwordHash, fullName, now, now);
-      return { id, email, username, full_name: fullName };
+      stmt.run(id, email, passwordHash, fullName, now, now);
+      return { id, email, full_name: fullName };
     },
 
     createUserWithPhonePassword: (phone, password, fullName) => {

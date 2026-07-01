@@ -25,32 +25,26 @@ async function parseBody(req) {
 export function createAuthRoutes(db, auth, authQueries) {
   return {
     register: async (req, res) => {
-      const { email, username, password, fullName, authMethod } = await parseBody(req);
+      const { email, password, fullName, authMethod } = await parseBody(req);
 
-      if (!email || !username || !password || !fullName) {
-        sendJson(res, 400, { error: "email, username, password, and fullName are required" });
+      if (!email || !password || !fullName) {
+        sendJson(res, 400, { error: "email, password, and fullName are required" });
         return;
       }
 
       try {
-        const existingEmail = authQueries.findUserByEmail(email);
-        if (existingEmail) {
+        const existingUser = authQueries.findUserByEmail(email);
+        if (existingUser) {
           sendJson(res, 409, { error: "Email already registered" });
           return;
         }
 
-        const existingUsername = authQueries.findUserByUsername(username);
-        if (existingUsername) {
-          sendJson(res, 409, { error: "Username already taken" });
-          return;
-        }
-
-        const user = authQueries.createUserWithEmailPassword(email, password, fullName, username);
+        const user = authQueries.createUserWithEmailPassword(email, password, fullName);
         const token = auth.signToken(user.id);
 
         sendJson(res, 201, {
           token,
-          user: { id: user.id, email: user.email, username: user.username, full_name: user.full_name },
+          user: { id: user.id, email: user.email, full_name: user.full_name },
         });
       } catch (error) {
         sendJson(res, 500, { error: error.message || "Registration failed" });
@@ -58,18 +52,18 @@ export function createAuthRoutes(db, auth, authQueries) {
     },
 
     login: async (req, res) => {
-      const { credential, password } = await parseBody(req);
+      const { email, password } = await parseBody(req);
 
-      if (!credential || !password) {
-        sendJson(res, 400, { error: "credential and password are required" });
+      if (!email || !password) {
+        sendJson(res, 400, { error: "email and password are required" });
         return;
       }
 
       try {
-        const user = authQueries.findUserByEmail(credential) || authQueries.findUserByUsername(credential);
+        const user = authQueries.findUserByEmail(email);
 
         if (!user || !authQueries.verifyPassword(user, password)) {
-          sendJson(res, 401, { error: "Invalid credentials" });
+          sendJson(res, 401, { error: "Invalid email or password" });
           return;
         }
 
