@@ -124,6 +124,18 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === "GET" && url.pathname === "/api/users/search") {
+      const query = url.searchParams.get("q")?.trim();
+      if (!query) {
+        sendJson(res, 400, { error: "q parameter is required" });
+        return;
+      }
+
+      const users = authQueries.searchUsersByUsername(query).map((user) => authQueries.getUserPublicData(user));
+      sendJson(res, 200, { users });
+      return;
+    }
+
     if (req.method === "POST" && url.pathname === "/api/auth/logout") {
       await authRoutes.logout(req, res);
       return;

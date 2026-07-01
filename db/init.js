@@ -14,6 +14,7 @@ export function initializeDatabase() {
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE,
+      username TEXT UNIQUE,
       phone TEXT UNIQUE,
       password_hash TEXT,
       full_name TEXT,
@@ -25,9 +26,16 @@ export function initializeDatabase() {
     )
   `);
 
+  // Add username column if the table already existed without it
+  const userColumns = db.prepare("PRAGMA table_info(users)").all().map((column) => column.name);
+  if (!userColumns.includes("username")) {
+    db.exec("ALTER TABLE users ADD COLUMN username TEXT;");
+  }
+
   // Create indexes
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+    CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
     CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
     CREATE INDEX IF NOT EXISTS idx_users_oauth_id ON users(oauth_id);
   `);
