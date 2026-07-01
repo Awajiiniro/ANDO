@@ -5,7 +5,7 @@ import AuthCard from '../components/auth/AuthCard';
 import { useTheme } from '../context/ThemeContext';
 
 export default function Login({ onSwitchToRegister, onLoginSuccess }) {
-  const [email, setEmail] = useState('');
+  const [credential, setCredential] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,7 @@ export default function Login({ onSwitchToRegister, onLoginSuccess }) {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ credential, password }),
       });
 
       const data = await response.json();
@@ -71,11 +71,11 @@ export default function Login({ onSwitchToRegister, onLoginSuccess }) {
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
-          type="email"
-          label="Email address"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="text"
+          label="Email or Username"
+          placeholder="you@example.com or john_doe"
+          value={credential}
+          onChange={(e) => setCredential(e.target.value)}
           required
         />
 

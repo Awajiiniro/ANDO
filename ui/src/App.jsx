@@ -9,18 +9,15 @@ import './styles/globals.css';
 function AppContent() {
   const [screen, setScreen] = useState('splash');
 
-  // Wait until the splash completes, then decide where to go.
   const handleSplashComplete = useCallback(() => {
-    console.log('handleSplashComplete invoked');
     const token = localStorage.getItem('ando.auth_token');
     if (token) {
-      console.log('token found, redirecting to /');
-      window.location.href = '/';
+      setScreen('add-friends');
     } else {
-      console.log('no token, switching to login screen');
       setScreen('login');
     }
-  }, [setScreen]);
+  }, []);
+
   const handleSwitchToRegister = () => setScreen('register');
   const handleSwitchToLogin = () => setScreen('login');
   const handleLoginSuccess = () => setScreen('add-friends');
@@ -43,9 +40,17 @@ function AppContent() {
       )}
       {screen === 'add-friends' && (
         <AddFriendsChoice
-          onComplete={() => (window.location.href = '/')}
-          onSkip={() => (window.location.href = '/')}
+          onComplete={() => setScreen('home')}
+          onSkip={() => setScreen('home')}
         />
+      )}
+      {screen === 'home' && (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 px-6">
+          <div className="text-center space-y-3">
+            <h1 className="text-3xl font-bold">Welcome to ANDO</h1>
+            <p className="text-slate-600 dark:text-slate-400">You have entered the app successfully.</p>
+          </div>
+        </div>
       )}
     </>
   );

@@ -84,6 +84,7 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           fullName: formData.fullName,
+          username: formData.username,
           email: formData.email,
           password: formData.password,
         }),
