@@ -9,8 +9,43 @@ export function createAuthQueries(db) {
       return db.prepare("SELECT * FROM users WHERE email = ?").get(email);
     },
 
+    findUserByUsername: (username) => {
+      return db.prepare("SELECT * FROM users WHERE username = ?").get(username);
+    },
+
+    findUserByCredential: (credential) => {
+      const normalized = String(credential || "").trim();
+      if (!normalized) return null;
+      return db.prepare("SELECT * FROM users WHERE email = ? OR username = ? OR phone = ?").get(normalized, normalized, normalized);
+    },
+
     findUserByPhone: (phone) => {
       return db.prepare("SELECT * FROM users WHERE phone = ?").get(phone);
+    },
+
+    findUsersByPhones: (phones) => {
+      if (!phones?.length) return [];
+      const normalized = phones
+        .map((phone) => String(phone).trim())
+        .filter(Boolean)
+        .map((phone) => phone.replace(/\D/g, ""));
+      if (!normalized.length) return [];
+
+      const placeholders = normalized.map(() => "?").join(",");
+      const rows = db.prepare(`SELECT * FROM users WHERE REPLACE(REPLACE(REPLACE(phone, ' ', ''), '-', ''), '+', '') IN (${placeholders})`).all(...normalized);
+      return rows;
+    },
+
+    searchUsersByUsernameOrPhone: (query) => {
+      const normalized = String(query || "").trim();
+      if (!normalized) return [];
+      const like = `%${normalized}%`;
+      return db.prepare(`
+        SELECT * FROM users
+        WHERE username LIKE ? OR full_name LIKE ? OR phone LIKE ?
+        ORDER BY full_name COLLATE NOCASE, username COLLATE NOCASE
+        LIMIT 20
+      `).all(like, like, like);
     },
 
     findUserById: (id) => {
@@ -21,32 +56,36 @@ export function createAuthQueries(db) {
       return db.prepare("SELECT * FROM users WHERE oauth_provider = ? AND oauth_id = ?").get(oauthProvider, oauthId);
     },
 
-    createUserWithEmailPassword: (email, password, fullName) => {
+    createUserWithEmailPassword: (email, password, fullName, options = {}) => {
       const id = randomUUID();
       const passwordHash = bcrypt.hashSync(password, saltRounds);
       const now = Date.now();
+      const phone = options.phone || null;
+      const username = options.username || null;
 
       const stmt = db.prepare(`
-        INSERT INTO users (id, email, password_hash, full_name, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO users (id, email, phone, username, password_hash, full_name, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
-      stmt.run(id, email, passwordHash, fullName, now, now);
-      return { id, email, full_name: fullName };
+      stmt.run(id, email, phone, username, passwordHash, fullName, now, now);
+      return { id, email, phone, username, full_name: fullName };
     },
 
-    createUserWithPhonePassword: (phone, password, fullName) => {
+    createUserWithPhonePassword: (phone, password, fullName, options = {}) => {
       const id = randomUUID();
       const passwordHash = bcrypt.hashSync(password, saltRounds);
       const now = Date.now();
+      const username = options.username || null;
+      const email = options.email || null;
 
       const stmt = db.prepare(`
-        INSERT INTO users (id, phone, password_hash, full_name, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO users (id, email, phone, username, password_hash, full_name, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
-      stmt.run(id, phone, passwordHash, fullName, now, now);
-      return { id, phone, full_name: fullName };
+      stmt.run(id, email, phone, username, passwordHash, fullName, now, now);
+      return { id, email, phone, username, full_name: fullName };
     },
 
     createOrUpdateUserWithOAuth: (oauthProvider, oauthData) => {
@@ -103,7 +142,13 @@ export function createAuthQueries(db) {
 
     getUserPublicData: (user) => {
       if (!user) return null;
-      const { password_hash, oauth_id, ...publicData } = user;
+      const { password_hash, oauth_id, phone, ...publicData } = user;
+      return publicData;
+    },
+
+    getUserPublicDataForLookup: (user) => {
+      if (!user) return null;
+      const { password_hash, oauth_id, phone, ...publicData } = user;
       return publicData;
     },
   };

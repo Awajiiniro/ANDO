@@ -19,7 +19,12 @@ export default function UsernameSearch({ onBack }) {
     setLoading(true);
 
     try {
-      const response = await fetch(`/api/users/search?q=${encodeURIComponent(query.trim())}`);
+      const token = localStorage.getItem('ando.auth_token');
+      const response = await fetch(`/api/users/search?q=${encodeURIComponent(query.trim())}`, {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      });
       const data = await response.json();
       if (!response.ok) {
         setError(data.error || 'Search failed');

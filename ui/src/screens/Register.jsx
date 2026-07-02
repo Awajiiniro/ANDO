@@ -27,6 +27,7 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
     fullName: '',
     username: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
   });
@@ -48,7 +49,9 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
     if (!/^[a-zA-Z0-9_]{3,20}$/.test(formData.username)) {
       newErrors.username = 'Username must be 3-20 characters (letters, numbers, underscore)';
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (!formData.email && !formData.phone) {
+      newErrors.email = 'Please enter an email or phone number';
+    } else if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email';
     }
     if (formData.password.length < 8) {
@@ -86,6 +89,7 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
           fullName: formData.fullName,
           username: formData.username,
           email: formData.email,
+          phone: formData.phone,
           password: formData.password,
         }),
       });
@@ -152,7 +156,15 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
           value={formData.email}
           onChange={handleChange}
           error={errors.email}
-          required
+        />
+
+        <Input
+          type="tel"
+          label="Phone number"
+          placeholder="+1 555 123 4567"
+          name="phone"
+          value={formData.phone}
+          onChange={handleChange}
         />
 
         <div>

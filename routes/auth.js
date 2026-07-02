@@ -22,29 +22,55 @@ async function parseBody(req) {
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
+function sanitizeUserForSearch(user) {
+  if (!user) return null;
+  const { password_hash, oauth_id, phone, ...publicData } = user;
+  return publicData;
+}
+
 export function createAuthRoutes(db, auth, authQueries) {
   return {
     register: async (req, res) => {
-      const { email, password, fullName, authMethod } = await parseBody(req);
+      const { email, password, fullName, username, phone } = await parseBody(req);
 
-      if (!email || !password || !fullName) {
-        sendJson(res, 400, { error: "email, password, and fullName are required" });
+      if (!password || !fullName || (!email && !phone)) {
+        sendJson(res, 400, { error: "email or phone, password, and fullName are required" });
         return;
       }
 
       try {
-        const existingUser = authQueries.findUserByEmail(email);
-        if (existingUser) {
-          sendJson(res, 409, { error: "Email already registered" });
-          return;
+        if (email) {
+          const existingUser = authQueries.findUserByEmail(email);
+          if (existingUser) {
+            sendJson(res, 409, { error: "Email already registered" });
+            return;
+          }
         }
 
-        const user = authQueries.createUserWithEmailPassword(email, password, fullName);
+        if (phone) {
+          const existingPhoneUser = authQueries.findUserByPhone(phone);
+          if (existingPhoneUser) {
+            sendJson(res, 409, { error: "Phone number already registered" });
+            return;
+          }
+        }
+
+        if (username) {
+          const existingUsernameUser = authQueries.findUserByUsername(username);
+          if (existingUsernameUser) {
+            sendJson(res, 409, { error: "Username already taken" });
+            return;
+          }
+        }
+
+        const user = email
+          ? authQueries.createUserWithEmailPassword(email, password, fullName, { username, phone })
+          : authQueries.createUserWithPhonePassword(phone, password, fullName, { username, email: null });
         const token = auth.signToken(user.id);
 
         sendJson(res, 201, {
           token,
-          user: { id: user.id, email: user.email, full_name: user.full_name },
+          user: authQueries.getUserPublicData(user),
         });
       } catch (error) {
         sendJson(res, 500, { error: error.message || "Registration failed" });
@@ -52,18 +78,19 @@ export function createAuthRoutes(db, auth, authQueries) {
     },
 
     login: async (req, res) => {
-      const { email, password } = await parseBody(req);
+      const { credential, email, password } = await parseBody(req);
+      const loginCredential = credential || email;
 
-      if (!email || !password) {
-        sendJson(res, 400, { error: "email and password are required" });
+      if (!loginCredential || !password) {
+        sendJson(res, 400, { error: "credential and password are required" });
         return;
       }
 
       try {
-        const user = authQueries.findUserByEmail(email);
+        const user = authQueries.findUserByCredential(loginCredential);
 
         if (!user || !authQueries.verifyPassword(user, password)) {
-          sendJson(res, 401, { error: "Invalid email or password" });
+          sendJson(res, 401, { error: "Invalid credentials" });
           return;
         }
 
@@ -206,6 +233,59 @@ export function createAuthRoutes(db, auth, authQueries) {
 
       sendJson(res, 200, {
         user: authQueries.getUserPublicData(user),
+      });
+    },
+
+    searchUsers: async (req, res) => {
+      const token = auth.extractToken(req);
+      if (!token) {
+        sendJson(res, 401, { error: "Missing authorization token" });
+        return;
+      }
+
+      const payload = auth.verifyToken(token);
+      if (!payload) {
+        sendJson(res, 401, { error: "Invalid or expired token" });
+        return;
+      }
+
+      const url = new URL(req.url, "http://localhost");
+      const query = url.searchParams.get("q") || "";
+
+      if (!query.trim()) {
+        sendJson(res, 400, { error: "Search query is required" });
+        return;
+      }
+
+      const users = authQueries.searchUsersByUsernameOrPhone(query);
+      sendJson(res, 200, {
+        users: users.map(sanitizeUserForSearch),
+      });
+    },
+
+    searchContacts: async (req, res) => {
+      const token = auth.extractToken(req);
+      if (!token) {
+        sendJson(res, 401, { error: "Missing authorization token" });
+        return;
+      }
+
+      const payload = auth.verifyToken(token);
+      if (!payload) {
+        sendJson(res, 401, { error: "Invalid or expired token" });
+        return;
+      }
+
+      const body = await parseBody(req);
+      const phoneNumbers = Array.isArray(body.phoneNumbers) ? body.phoneNumbers : [];
+      if (!phoneNumbers.length) {
+        sendJson(res, 400, { error: "At least one phone number is required" });
+        return;
+      }
+
+      const users = authQueries.findUsersByPhones(phoneNumbers);
+      sendJson(res, 200, {
+        users: users.map(sanitizeUserForSearch),
       });
     },
   };

@@ -15,6 +15,7 @@ export function initializeDatabase() {
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE,
       phone TEXT UNIQUE,
+      username TEXT UNIQUE,
       password_hash TEXT,
       full_name TEXT,
       profile_picture_url TEXT,
@@ -24,6 +25,12 @@ export function initializeDatabase() {
       updated_at INTEGER NOT NULL
     )
   `);
+
+  const tableInfo = db.prepare("PRAGMA table_info(users)").all();
+  const hasUsername = tableInfo.some((column) => column.name === "username");
+  if (!hasUsername) {
+    db.exec("ALTER TABLE users ADD COLUMN username TEXT UNIQUE");
+  }
 
   // Create indexes
   db.exec(`

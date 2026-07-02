@@ -4,6 +4,8 @@ import Splash from './screens/Splash';
 import Login from './screens/Login';
 import Register from './screens/Register';
 import AddFriendsChoice from './screens/AddFriendsChoice';
+import PhoneContactsSearch from './screens/PhoneContactsSearch';
+import UsernameSearch from './screens/UsernameSearch';
 import './styles/globals.css';
 
 function AppContent() {
@@ -23,6 +25,20 @@ function AppContent() {
   const handleLoginSuccess = () => setScreen('add-friends');
   const handleRegisterSuccess = () => setScreen('add-friends');
 
+  const handleAddFriendsContinue = (method) => {
+    if (method === 'phone') {
+      setScreen('phone-contacts');
+      return;
+    }
+
+    if (method === 'username') {
+      setScreen('username-search');
+      return;
+    }
+
+    setScreen('home');
+  };
+
   return (
     <>
       {screen === 'splash' && <Splash onComplete={handleSplashComplete} />}
@@ -40,8 +56,19 @@ function AppContent() {
       )}
       {screen === 'add-friends' && (
         <AddFriendsChoice
-          onComplete={() => setScreen('home')}
+          onContinue={handleAddFriendsContinue}
           onSkip={() => setScreen('home')}
+        />
+      )}
+      {screen === 'phone-contacts' && (
+        <PhoneContactsSearch
+          onBack={() => setScreen('add-friends')}
+          onDone={() => setScreen('home')}
+        />
+      )}
+      {screen === 'username-search' && (
+        <UsernameSearch
+          onBack={() => setScreen('add-friends')}
         />
       )}
       {screen === 'home' && (
