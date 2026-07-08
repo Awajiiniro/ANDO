@@ -116,6 +116,16 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === "POST" && url.pathname === "/api/auth/forgot-password") {
+      await authRoutes.forgotPassword(req, res);
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/auth/reset-password") {
+      await authRoutes.resetPassword(req, res);
+      return;
+    }
+
     if (req.method === "POST" && url.pathname === "/api/auth/verify-otp") {
       await authRoutes.verifyOtp(req, res);
       return;

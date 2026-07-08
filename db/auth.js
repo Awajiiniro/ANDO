@@ -117,6 +117,17 @@ export function createAuthQueries(db) {
       return bcrypt.compareSync(password, user.password_hash);
     },
 
+    updatePasswordForUser: (userId, password) => {
+      const passwordHash = bcrypt.hashSync(password, saltRounds);
+      const stmt = db.prepare(`
+        UPDATE users
+        SET password_hash = ?, updated_at = ?
+        WHERE id = ?
+      `);
+      stmt.run(passwordHash, Date.now(), userId);
+      return true;
+    },
+
     createOtpVerification: ({ purpose, channel, destination, expiresAt }) => {
       const id = randomUUID();
       const code = String(randomInt(100000, 999999)).padStart(6, "0");
