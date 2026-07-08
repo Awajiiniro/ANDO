@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import AuthCard from '../components/auth/AuthCard';
+import BrandLogo from '../components/common/BrandLogo';
 import { useTheme } from '../context/ThemeContext';
 
 export default function Login({ onSwitchToRegister, onLoginSuccess }) {
@@ -141,7 +142,7 @@ export default function Login({ onSwitchToRegister, onLoginSuccess }) {
       {/* Header */}
       <div className="text-center space-y-2">
         <div className="flex justify-center mb-4">
-          <img src="/ando-logo.jpeg" alt="ANDO" className="w-16 h-16 rounded-full" />
+          <BrandLogo className="w-16 h-16" />
         </div>
         <h1 className="text-3xl font-bold gradient-text">Welcome back</h1>
         <p className="text-slate-600 dark:text-slate-400">Sign in to your secure messenger</p>

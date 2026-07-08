@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
+import BrandLogo from '../components/common/BrandLogo';
 
 export default function Splash({ onComplete }) {
   useEffect(() => {
@@ -44,11 +45,7 @@ export default function Splash({ onComplete }) {
             repeat: Infinity,
           }}
         >
-          <img
-            src="/ando-logo.jpeg"
-            alt="ANDO"
-            className="w-full h-full rounded-full object-cover shadow-2xl"
-          />
+          <BrandLogo className="w-full h-full" />
         </motion.div>
       </motion.div>
 
