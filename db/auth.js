@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { randomUUID } from "node:crypto";
+import { randomInt, randomUUID } from "node:crypto";
 
 export function createAuthQueries(db) {
   const saltRounds = 10;
@@ -115,6 +115,45 @@ export function createAuthQueries(db) {
     verifyPassword: (user, password) => {
       if (!user || !user.password_hash) return false;
       return bcrypt.compareSync(password, user.password_hash);
+    },
+
+    createOtpVerification: ({ purpose, channel, destination, expiresAt }) => {
+      const id = randomUUID();
+      const code = String(randomInt(100000, 999999)).padStart(6, "0");
+      const createdAt = Date.now();
+
+      const stmt = db.prepare(`
+        INSERT INTO otp_verifications (id, purpose, channel, destination, code, expires_at, verified, verified_at, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, 0, NULL, ?)
+      `);
+
+      stmt.run(id, purpose, channel, destination, code, expiresAt, createdAt);
+      return { id, code, purpose, channel, destination, expiresAt };
+    },
+
+    findActiveOtpVerification: (purpose, channel, destination) => {
+      return db.prepare(`
+        SELECT * FROM otp_verifications
+        WHERE purpose = ? AND channel = ? AND destination = ? AND verified = 0 AND expires_at > ?
+        ORDER BY created_at DESC
+        LIMIT 1
+      `).get(purpose, channel, destination, Date.now());
+    },
+
+    verifyOtpCode: (id, code) => {
+      const verification = db.prepare("SELECT * FROM otp_verifications WHERE id = ?").get(id);
+      if (!verification) return null;
+      if (verification.verified) return null;
+      if (verification.expires_at <= Date.now()) return null;
+      if (verification.code !== String(code)) return null;
+
+      const stmt = db.prepare(`
+        UPDATE otp_verifications
+        SET verified = 1, verified_at = ?
+        WHERE id = ?
+      `);
+      stmt.run(Date.now(), id);
+      return { ...verification, verified: 1 };
     },
 
     recordToken: (token, userId, expiresAt) => {

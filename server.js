@@ -111,6 +111,21 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === "POST" && url.pathname === "/api/auth/send-otp") {
+      await authRoutes.sendOtp(req, res);
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/auth/verify-otp") {
+      await authRoutes.verifyOtp(req, res);
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/auth/resend-otp") {
+      await authRoutes.resendOtp(req, res);
+      return;
+    }
+
     if (req.method === "POST" && url.pathname === "/api/auth/register-phone") {
       await authRoutes.registerPhone(req, res);
       return;

@@ -30,15 +30,102 @@ function sanitizeUserForSearch(user) {
 
 export function createAuthRoutes(db, auth, authQueries) {
   return {
+    sendOtp: async (req, res) => {
+      const { purpose = "signup", channel, destination } = await parseBody(req);
+
+      if (!channel || !destination) {
+        sendJson(res, 400, { error: "channel and destination are required" });
+        return;
+      }
+
+      try {
+        const expiresAt = Date.now() + 10 * 60 * 1000;
+        const verification = authQueries.createOtpVerification({ purpose, channel, destination, expiresAt });
+
+        console.log(`[auth] OTP sent via ${channel} to ${destination}: ${verification.code}`);
+
+        sendJson(res, 200, {
+          ok: true,
+          verificationId: verification.id,
+          code: verification.code,
+          message: `Verification code sent to your ${channel}.`,
+          verificationLink: `http://localhost:3000/api/auth/verify?channel=${channel}&destination=${encodeURIComponent(destination)}&code=${verification.code}`,
+        });
+      } catch (error) {
+        sendJson(res, 500, { error: error.message || "Unable to send verification code" });
+      }
+    },
+
+    resendOtp: async (req, res) => {
+      const { purpose = "signup", channel, destination } = await parseBody(req);
+
+      if (!channel || !destination) {
+        sendJson(res, 400, { error: "channel and destination are required" });
+        return;
+      }
+
+      try {
+        const expiresAt = Date.now() + 10 * 60 * 1000;
+        const verification = authQueries.createOtpVerification({ purpose, channel, destination, expiresAt });
+
+        console.log(`[auth] OTP resent via ${channel} to ${destination}: ${verification.code}`);
+
+        sendJson(res, 200, {
+          ok: true,
+          verificationId: verification.id,
+          code: verification.code,
+          message: `A new verification code was sent to your ${channel}.`,
+        });
+      } catch (error) {
+        sendJson(res, 500, { error: error.message || "Unable to resend verification code" });
+      }
+    },
+
+    verifyOtp: async (req, res) => {
+      const { verificationId, code } = await parseBody(req);
+
+      if (!verificationId || !code) {
+        sendJson(res, 400, { error: "verificationId and code are required" });
+        return;
+      }
+
+      try {
+        const verification = authQueries.verifyOtpCode(verificationId, code);
+        if (!verification) {
+          sendJson(res, 401, { error: "Invalid or expired verification code" });
+          return;
+        }
+
+        sendJson(res, 200, {
+          ok: true,
+          verified: true,
+          message: "Verification code confirmed.",
+        });
+      } catch (error) {
+        sendJson(res, 500, { error: error.message || "Verification failed" });
+      }
+    },
+
     register: async (req, res) => {
-      const { email, password, fullName, username, phone } = await parseBody(req);
+      const { email, password, fullName, username, phone, verificationId, otpCode } = await parseBody(req);
 
       if (!password || !fullName || (!email && !phone)) {
         sendJson(res, 400, { error: "email or phone, password, and fullName are required" });
         return;
       }
 
+      if (!verificationId || !otpCode) {
+        sendJson(res, 400, { error: "A verified OTP is required before creating an account" });
+        return;
+      }
+
       try {
+        const verifiedOtp = authQueries.verifyOtpCode(verificationId, otpCode);
+        if (!verifiedOtp) {
+          sendJson(res, 401, { error: "Invalid or expired verification code" });
+          return;
+        }
+
         if (email) {
           const existingUser = authQueries.findUserByEmail(email);
           if (existingUser) {

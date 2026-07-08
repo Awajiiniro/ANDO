@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import AuthCard from '../components/auth/AuthCard';
@@ -34,6 +34,12 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [otpStage, setOtpStage] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [verificationId, setVerificationId] = useState('');
+  const [otpDestination, setOtpDestination] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   const passwordStrength = useMemo(
@@ -74,14 +80,80 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined;
+
+    const timer = window.setTimeout(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [resendCooldown]);
+
+  const handleSendOtp = async (isResend = false) => {
+    const destination = formData.email || formData.phone;
+    const channel = formData.email ? 'email' : 'phone';
+
+    if (!destination) {
+      setErrors({ submit: 'Please enter an email or phone number first' });
+      return;
+    }
+
+    setOtpLoading(true);
+    setErrors({});
+
+    try {
+      const endpoint = isResend ? '/api/auth/resend-otp' : '/api/auth/send-otp';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ channel, destination, purpose: 'signup' }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        setErrors({ submit: data.error || 'Unable to send verification code' });
+        return;
+      }
+
+      setVerificationId(data.verificationId);
+      setOtpDestination(destination);
+      setOtpStage(true);
+      setOtpCode('');
+      setResendCooldown(60);
+      setErrors({ submit: isResend ? `A new verification code was sent to ${destination}.` : `Verification code sent to ${destination}.` });
+    } catch (err) {
+      setErrors({ submit: err.message || 'An error occurred' });
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) return;
+    if (!otpStage) {
+      await handleSendOtp();
+      return;
+    }
 
     setLoading(true);
+    setErrors({});
 
     try {
+      const verifyResponse = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ verificationId, code: otpCode }),
+      });
+
+      const verifyData = await verifyResponse.json();
+      if (!verifyResponse.ok) {
+        setErrors({ submit: verifyData.error || 'Verification failed' });
+        return;
+      }
+
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -91,6 +163,8 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
           email: formData.email,
           phone: formData.phone,
           password: formData.password,
+          verificationId,
+          otpCode,
         }),
       });
 
@@ -150,7 +224,7 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
 
         <Input
           type="email"
-          label="Email address"
+          label="Preferred email"
           placeholder="you@example.com"
           name="email"
           value={formData.email}
@@ -166,6 +240,29 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
           value={formData.phone}
           onChange={handleChange}
         />
+
+        {otpStage && (
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 p-4 space-y-3">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Enter the 6-digit code sent to <span className="font-semibold text-slate-900 dark:text-white">{otpDestination}</span>
+            </p>
+            <Input
+              type="text"
+              label="Verification code"
+              placeholder="123456"
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={() => handleSendOtp(true)}
+              disabled={otpLoading || resendCooldown > 0}
+              className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : 'Resend code'}
+            </button>
+          </div>
+        )}
 
         <div>
           <Input
@@ -239,9 +336,9 @@ export default function Register({ onSwitchToLogin, onRegisterSuccess }) {
           variant="primary"
           size="lg"
           fullWidth
-          loading={loading}
+          loading={loading || otpLoading}
         >
-          Create Account
+          {otpStage ? 'Verify & Create Account' : 'Send Verification Code'}
         </Button>
       </form>
 

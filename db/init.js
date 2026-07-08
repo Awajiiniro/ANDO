@@ -55,5 +55,24 @@ export function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_auth_tokens_expires_at ON auth_tokens(expires_at);
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS otp_verifications (
+      id TEXT PRIMARY KEY,
+      purpose TEXT NOT NULL,
+      channel TEXT NOT NULL,
+      destination TEXT NOT NULL,
+      code TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      verified INTEGER NOT NULL DEFAULT 0,
+      verified_at INTEGER,
+      created_at INTEGER NOT NULL
+    )
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_otp_verifications_destination ON otp_verifications(destination, purpose, channel);
+    CREATE INDEX IF NOT EXISTS idx_otp_verifications_expires_at ON otp_verifications(expires_at);
+  `);
+
   return db;
 }
